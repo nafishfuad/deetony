@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#000000">
+  <title>Phone Viewer — Original Ratio</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100%;
+      background: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+    #ui-container {
+      min-height: 100vh;
+      min-height: 100dvh;
+      width: min(84vw, 350px);
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+    #profile-pic {
+      width: 105px;
+      height: 105px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #087df0;
+      background: #222;
+    }
+    #profile-name { font-size: 22px; font-weight: 700; }
+    input, button {
+      width: 100%;
+      padding: 13px;
+      border: 0;
+      border-radius: 9px;
+      font-size: 16px;
+    }
+    input { background: #292929; color: #fff; }
+    button { background: #087df0; color: #fff; font-weight: 700; cursor: pointer; }
+    #error { color: #ff7777; font-size: 13px; text-align: center; min-height: 16px; }
+
+    /* Native aspect ratio: full available width, automatic height, no forced crop. */
+    #image-view {
+      display: none;
+      width: 100vw;
+      margin: 0;
+      padding: 0;
+      background: #000;
+      line-height: 0;
+    }
+    #displayImage {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-width: none;
+      object-fit: contain;
+      object-position: top center;
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+    #backButton {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      top: max(8px, env(safe-area-inset-top));
+      left: 8px;
+      width: auto;
+      padding: 8px 12px;
+      font-size: 13px;
+      background: rgba(25,25,25,.88);
+      border: 1px solid #666;
+    }
+    body.viewing { overflow-y: auto; }
+    body.viewing #image-view { display: block; }
+  </style>
+</head>
+<body>
+  <div id="ui-container">
+    <img id="profile-pic" src="avatar.jpg" alt="Dee Tony">
+    <div id="profile-name">Dee Tony</div>
+    <input type="url" id="linkInput" placeholder="Paste direct image link here..." autocomplete="off">
+    <button id="loadButton" type="button">Load Image</button>
+    <div id="error"></div>
+  </div>
+
+  <main id="image-view">
+    <img id="displayImage" alt="Loaded image">
+  </main>
+  <button id="backButton" type="button">Back</button>
+
+  <script>
+    const menu = document.getElementById('ui-container');
+    const input = document.getElementById('linkInput');
+    const image = document.getElementById('displayImage');
+    const error = document.getElementById('error');
+    const back = document.getElementById('backButton');
+
+    function loadImage() {
+      const link = input.value.trim();
+      error.textContent = '';
+      if (!link) {
+        error.textContent = 'Paste a direct image URL first.';
+        return;
+      }
+      try {
+        const url = new URL(link);
+        if (!['http:', 'https:'].includes(url.protocol)) throw new Error();
+      } catch {
+        error.textContent = 'Please enter a valid HTTP or HTTPS image URL.';
+        return;
+      }
+
+      image.onload = () => {
+        menu.style.display = 'none';
+        back.style.display = 'block';
+        document.body.classList.add('viewing');
+        window.scrollTo(0, 0);
+      };
+      image.onerror = () => {
+        error.textContent = 'Image could not load. Check that the link is public and points directly to an image.';
+        image.removeAttribute('src');
+      };
+      image.src = link;
+    }
+
+    function goBack() {
+      image.onload = null;
+      image.onerror = null;
+      image.removeAttribute('src');
+      document.body.classList.remove('viewing');
+      back.style.display = 'none';
+      menu.style.display = 'flex';
+      input.value = '';
+      error.textContent = '';
+      window.scrollTo(0, 0);
+    }
+
+    document.getElementById('loadButton').addEventListener('click', loadImage);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') loadImage(); });
+    back.addEventListener('click', goBack);
+  </script>
+</body>
+</html>
