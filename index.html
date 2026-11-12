@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#000000">
-  <title>Phone Viewer — Original Ratio</title>
+  <title>Dee Tony — Phone Viewer</title>
   <style>
     * { box-sizing: border-box; }
     html, body {
@@ -15,12 +15,12 @@
       background: #000;
       color: #fff;
       font-family: Arial, sans-serif;
+      overflow-x: hidden;
+      overscroll-behavior-x: none;
     }
     body {
       min-height: 100vh;
       min-height: 100dvh;
-      overflow-x: hidden;
-      overflow-y: auto;
     }
     #ui-container {
       min-height: 100vh;
@@ -53,40 +53,45 @@
     button { background: #087df0; color: #fff; font-weight: 700; cursor: pointer; }
     #error { color: #ff7777; font-size: 13px; text-align: center; min-height: 16px; }
 
-    /* Native aspect ratio: full available width, automatic height, no forced crop. */
+    /* Use the containing viewport width, not 100vw (which can include scrollbar width). */
     #image-view {
       display: none;
-      width: 100vw;
+      width: 100%;
+      max-width: 100%;
       margin: 0;
       padding: 0;
       background: #000;
       line-height: 0;
+      overflow: hidden;
     }
     #displayImage {
       display: block;
       width: 100%;
+      max-width: 100%;
       height: auto;
-      max-width: none;
       object-fit: contain;
       object-position: top center;
       margin: 0;
       padding: 0;
       border: 0;
     }
-    #backButton {
+    #back-area {
       display: none;
-      position: fixed;
-      z-index: 10;
-      top: max(8px, env(safe-area-inset-top));
-      left: 8px;
-      width: auto;
-      padding: 8px 12px;
-      font-size: 13px;
-      background: rgba(25,25,25,.88);
-      border: 1px solid #666;
+      width: 100%;
+      padding: 12px 14px 18px;
+      background: #000;
+      line-height: normal;
     }
-    body.viewing { overflow-y: auto; }
-    body.viewing #image-view { display: block; }
+    #backButton { max-width: 120px; padding: 9px 12px; font-size: 14px; }
+    #loadError {
+      display: none;
+      color: #ff7777;
+      padding: 12px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    body.viewing #image-view,
+    body.viewing #back-area { display: block; }
   </style>
 </head>
 <body>
@@ -100,19 +105,25 @@
 
   <main id="image-view">
     <img id="displayImage" alt="Loaded image">
+    <div id="loadError"></div>
   </main>
-  <button id="backButton" type="button">Back</button>
+  <div id="back-area">
+    <button id="backButton" type="button">Back to menu</button>
+  </div>
 
   <script>
     const menu = document.getElementById('ui-container');
     const input = document.getElementById('linkInput');
     const image = document.getElementById('displayImage');
     const error = document.getElementById('error');
-    const back = document.getElementById('backButton');
+    const loadError = document.getElementById('loadError');
 
     function loadImage() {
       const link = input.value.trim();
       error.textContent = '';
+      loadError.style.display = 'none';
+      loadError.textContent = '';
+
       if (!link) {
         error.textContent = 'Paste a direct image URL first.';
         return;
@@ -127,14 +138,18 @@
 
       image.onload = () => {
         menu.style.display = 'none';
-        back.style.display = 'block';
         document.body.classList.add('viewing');
         window.scrollTo(0, 0);
       };
       image.onerror = () => {
-        error.textContent = 'Image could not load. Check that the link is public and points directly to an image.';
         image.removeAttribute('src');
+        loadError.textContent = 'Could not load this image. Check that the link is public and points directly to an image.';
+        loadError.style.display = 'block';
+        document.body.classList.add('viewing');
+        menu.style.display = 'none';
       };
+
+      image.crossOrigin = 'anonymous';
       image.src = link;
     }
 
@@ -143,16 +158,16 @@
       image.onerror = null;
       image.removeAttribute('src');
       document.body.classList.remove('viewing');
-      back.style.display = 'none';
       menu.style.display = 'flex';
       input.value = '';
       error.textContent = '';
+      loadError.style.display = 'none';
       window.scrollTo(0, 0);
     }
 
     document.getElementById('loadButton').addEventListener('click', loadImage);
     input.addEventListener('keydown', e => { if (e.key === 'Enter') loadImage(); });
-    back.addEventListener('click', goBack);
+    document.getElementById('backButton').addEventListener('click', goBack);
   </script>
 </body>
 </html>
